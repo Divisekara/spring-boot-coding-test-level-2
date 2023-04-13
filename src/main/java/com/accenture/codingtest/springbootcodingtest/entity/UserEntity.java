@@ -6,7 +6,7 @@ import javax.persistence.*;
 import java.util.UUID;
 
 @Entity
-@Table(name="acn.users")
+@Table(name="users")
 @Getter
 @Setter
 @RequiredArgsConstructor
@@ -20,9 +20,4 @@ public class UserEntity {
 
     @Column(nullable = false)
     private String password;
-
-    public UserEntity(String username, String password){
-        this.username = username;
-        this.password = password;
-    }
 }

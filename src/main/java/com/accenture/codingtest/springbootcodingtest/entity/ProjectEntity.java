@@ -9,7 +9,7 @@ import javax.persistence.*;
 import java.util.UUID;
 
 @Entity
-@Table(name="acn.projects")
+@Table(name="projects")
 @Getter
 @Setter
 @RequiredArgsConstructor
@@ -20,8 +20,4 @@ public class ProjectEntity {
 
     @Column(unique = true, nullable = false)
     private String name;
-
-    public ProjectEntity(String name){
-        this.name = name;
-    }
 }

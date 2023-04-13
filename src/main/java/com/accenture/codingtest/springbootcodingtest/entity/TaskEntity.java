@@ -9,7 +9,7 @@ import javax.persistence.*;
 import java.util.UUID;
 
 @Entity
-@Table(name="acn.tasks")
+@Table(name="tasks")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -32,12 +32,4 @@ public class TaskEntity {
 
     @Column(nullable = false)
     private UUID user_id;
-
-    public TaskEntity(String title, String description, String status, UUID  project_id, UUID user_id ){
-        this.title = title;
-        this.description = description;
-        this.status = status;
-        this.project_id = project_id;
-        this.user_id = user_id;
-    }
 }
