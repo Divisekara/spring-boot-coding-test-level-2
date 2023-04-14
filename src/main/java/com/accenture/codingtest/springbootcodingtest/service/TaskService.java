@@ -1,5 +1,7 @@
 package com.accenture.codingtest.springbootcodingtest.service;
 
+import com.accenture.codingtest.springbootcodingtest.domain.enums.ROLES;
+import com.accenture.codingtest.springbootcodingtest.domain.enums.STATUSES;
 import com.accenture.codingtest.springbootcodingtest.entity.TaskEntity;
 import com.accenture.codingtest.springbootcodingtest.model.common.SuccessDTO;
 import com.accenture.codingtest.springbootcodingtest.model.task.TaskDTO;
@@ -12,6 +14,7 @@ import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -50,7 +53,7 @@ public class TaskService {
 
         Optional<TaskEntity> taskEntity = taskRepository.findById(UUID.fromString(taskId));
         if(taskEntity.isEmpty()) {
-            //todo- logging needs
+            logger.info("task doesn't exist for [{}]", taskId);
             throw new IOException("task doesn't exist");
         } else {
             task.setTitle(taskEntity.get().getTitle());
@@ -69,7 +72,7 @@ public class TaskService {
         // todo - need to implement a custom method
         Optional<TaskEntity> taskEntity = taskRepository.findById(UUID.fromString(taskname));
         if(taskEntity.isEmpty()) {
-            //todo- logging needs
+            logger.info("task doesn't exist for [{}]", taskname);
             throw new IOException("task doesn't exist");
         } else {
             task.setTitle(taskEntity.get().getTitle());
@@ -88,32 +91,49 @@ public class TaskService {
         TaskEntity taskEntity = new TaskEntity();
         taskEntity.setTitle(task.getTitle());
         taskEntity.setDescription(task.getDescription());
-        taskEntity.setStatus(task.getStatus());
+        taskEntity.setStatus(STATUSES.NOT_STARTED.toString()); // default task
         taskEntity.setProject_id(UUID.fromString(task.getProject_id()));
         taskEntity.setUser_id(UUID.fromString(task.getUser_id()));
         // no need to set id
 
-        //todo = if task name already exists it returns an error then catch it and throw an error instead 500 internal server error
-
         TaskEntity x = taskRepository.save(taskEntity);
+        logger.info("task created for [{}]", taskEntity);
         // take id from the response from repository
         taskEntity.setId(x.getId());
-        //todo- logging needs
 
         SuccessDTO successDTO = new SuccessDTO();
         successDTO.setId(taskEntity.getId().toString());
         return successDTO;
     }
 
-    public SuccessDTO updateTask(String taskId, TaskDTO task) throws IOException {
+    public SuccessDTO updateTask(String taskId, TaskDTO task, String role) throws IOException {
         SuccessDTO successDTO = new SuccessDTO();
 
         Optional<TaskEntity> taskEntity = taskRepository.findById(UUID.fromString(taskId));
         if(taskEntity.isEmpty()) {
-            //todo- logging needs
+            logger.info("task doesn't exist");
             throw new IOException("task doesn't exist");
         } else {
-            // updating the task entity for the updated record
+            // validating status updating process
+            if (!validateStatus(task.getStatus(), taskEntity.get().getStatus(), role)){
+                logger.info("status update error");
+                throw new IOException("status update error");
+            }
+
+            // validating user assigning process
+            if(!validateUserAssign(task.getUser_id(), taskEntity.get().getUser_id().toString(), role)){
+                logger.info("cannot assign user [{}] to the task", task.getUser_id());
+                throw new IOException("cannot assign user to the task");
+            }
+
+            // validate team member activity
+            // Team member can only change the status of the task assigned to them, they can edit any other attribute in a task.
+            if(!validateTeamMemberActivitiesInUpdate(task, taskEntity.get())){
+                logger.info("cannot modify [{}] by default user role", taskEntity);
+                throw new IOException("cannot modify the task by default user role");
+            }
+
+            // assign new values to task entity for update
             taskEntity.get().setTitle(task.getTitle());
             taskEntity.get().setDescription(task.getDescription());
             taskEntity.get().setStatus(task.getStatus());
@@ -123,31 +143,53 @@ public class TaskService {
 
         // update the task
         taskRepository.save(taskEntity.get());
-        //todo- logging needs
+        logger.info("task update successfully [{}]", taskEntity.get());
 
         successDTO.setId(taskEntity.get().getId().toString());
         return successDTO;
     }
 
-    public SuccessDTO patchTask(String taskId, TaskDTO task) throws IOException {
+    public SuccessDTO patchTask(String taskId, TaskDTO task, String role) throws IOException {
         SuccessDTO successDTO = new SuccessDTO();
 
         Optional<TaskEntity> taskEntity = taskRepository.findById(UUID.fromString(taskId));
         if(taskEntity.isEmpty()) {
-            //todo- logging needs
+            logger.info("task doesn't exist for [{}]", taskId);
             throw new IOException("task doesn't exist");
         } else {
+            // Team member can only change the status of the task assigned to them, they can edit any other attribute in a task.
+            if(role.toUpperCase().equals(ROLES.DEFAULT_USER.toString()) && !validateTeamMemberActivitiesInPatch(task)){
+                logger.info("cannot modify [{}] by default user role", taskEntity);
+                throw new IOException("cannot modify the task by default user role");
+            }
+
+            if(task.getStatus() != null){
+                // validating status updating process
+                if (!validateStatus(task.getStatus(), taskEntity.get().getStatus(), role)){
+                    logger.info("status update error");
+                    throw new IOException("status update error");
+                }
+                taskEntity.get().setStatus(task.getStatus());
+            }
+
+            if(task.getUser_id() != null){
+                // validating user assigning process
+                if(!validateUserAssign(task.getUser_id(), taskEntity.get().getUser_id().toString(), role)){
+                    logger.info("cannot assign user [{}] to the task", task.getUser_id());
+                    throw new IOException("cannot assign user to the task");
+                }
+                taskEntity.get().setUser_id(UUID.fromString(task.getUser_id()));
+            }
+
             // updating the task entity for the updated record
             if(task.getTitle() != null){taskEntity.get().setTitle(task.getTitle());}
             if(task.getDescription() != null){taskEntity.get().setDescription(task.getDescription());}
-            if(task.getStatus() != null){taskEntity.get().setStatus(task.getStatus());}
             if(task.getProject_id() != null){taskEntity.get().setProject_id(UUID.fromString(task.getProject_id()));}
-            if(task.getUser_id() != null){taskEntity.get().setUser_id(UUID.fromString(task.getUser_id()));}
         }
 
         // update the task
         taskRepository.save(taskEntity.get());
-        //todo- logging needs
+        logger.info("task patched successfully [{}]", taskEntity.get());
 
         successDTO.setId(taskEntity.get().getId().toString());
         return successDTO;
@@ -158,7 +200,58 @@ public class TaskService {
             throw new IOException("task does not exist");
         }
         taskRepository.deleteById(UUID.fromString(taskId));
-        //todo- logging needs
+        logger.info("task [{}] deleted successful", taskId);
     }
 
+
+    // validateStatus validate status updating process
+    private boolean validateStatus(String newStatus, String prevStatus, String role) throws IOException{
+        // check whether the status is updated
+        if(Objects.equals(newStatus, prevStatus)) {
+            // if status is not updated there's no point validating further
+            return true;
+        }
+
+        // if status is updated then role need to be PRODUCT_OWNER else it's an error
+        if(!Objects.equals(ROLES.PRODUCT_OWNER.toString(), role.toUpperCase())){
+            return false;
+            // throw new IOException("status cannot be updated");
+        }
+
+        // if the role is product_owner then need to validate whether the status is valid
+        for (STATUSES s : STATUSES.values()){
+            if (Objects.equals(s.toString(), newStatus)){
+                return true;
+            }
+        }
+        // if the new status is not valid then need to return false
+        return false;
+    }
+
+    // validateUserAssign validate user assigning process
+    private boolean validateUserAssign(String newUser, String oldUser, String role) throws IOException{
+        // user is not updated
+        if(Objects.equals(newUser, oldUser)){
+            return true;
+        }
+
+        // Only PRODUCT_OWNER role can assign tasks to a team member in their project
+        return Objects.equals(ROLES.PRODUCT_OWNER.toString(), role.toUpperCase());
+    }
+
+    // validateTeamMemberActivitiesInUpdate team member cannot modify any attribute other than status
+    private boolean validateTeamMemberActivitiesInUpdate(TaskDTO newTask, TaskEntity oldTask)throws IOException{
+        return Objects.equals(newTask.getTitle(), oldTask.getTitle()) &&
+                Objects.equals(newTask.getDescription(), oldTask.getDescription()) &&
+                Objects.equals(newTask.getProject_id(), oldTask.getProject_id().toString()) &&
+                Objects.equals(newTask.getUser_id(), oldTask.getUser_id().toString());
+    }
+
+    // validateTeamMemberActivitiesInPatch team member cannot modify any attribute other than status
+    private boolean validateTeamMemberActivitiesInPatch(TaskDTO newTask)throws IOException{
+        return newTask.getTitle() == null &&
+                newTask.getDescription() == null &&
+                newTask.getProject_id() == null &&
+                newTask.getUser_id() == null;
+    }
 }
