@@ -5,7 +5,6 @@ import com.accenture.codingtest.springbootcodingtest.model.common.ErrorResponse;
 import com.accenture.codingtest.springbootcodingtest.model.common.SuccessDTO;
 import com.accenture.codingtest.springbootcodingtest.model.project.ProjectDTO;
 import com.accenture.codingtest.springbootcodingtest.model.project.ProjectListDTO;
-import com.accenture.codingtest.springbootcodingtest.model.user.UserDTO;
 import com.accenture.codingtest.springbootcodingtest.service.ProjectService;
 import io.micrometer.core.annotation.Timed;
 import lombok.extern.slf4j.Slf4j;
@@ -16,7 +15,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.io.IOException;
 import java.util.Objects;
 
 @Slf4j
@@ -31,13 +29,19 @@ public class ProjectController {
 
     @Timed(value = "get.projects.all.time", description = "time taken to get all projects")
     @GetMapping("")
-    public ResponseEntity<Object> GetAllProjects() throws IOException {
+    public ResponseEntity<Object> GetAllProjects(
+            @RequestParam(value = "q", required = false) String q,
+            @RequestParam(value = "pageIndex", defaultValue = "0", required = false) int pageIndex,
+            @RequestParam(value = "pageSize", defaultValue = "3", required = false) int pageSize,
+            @RequestParam(value = "sortBy", defaultValue = "name", required = false) String sortBy,
+            @RequestParam(value = "sortDirection", defaultValue = "ASC", required = false) String sortDirection) throws Exception {
+
         logger.info("Request received to get all projects endpoint");
 
         ProjectListDTO projectList;
         try {
-            projectList =  projectService.getAllProjects();
-        } catch (IOException e){
+            projectList =  projectService.getAllProjects(q, pageIndex, pageSize, sortBy, sortDirection);
+        } catch (Exception e){
             ErrorResponse error = new ErrorResponse();
             error.setDescription(e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
@@ -48,13 +52,13 @@ public class ProjectController {
 
     @Timed(value = "get.project.by.projectid.time", description = "time taken to get project by project id")
     @GetMapping("/{project-id}")
-    public ResponseEntity<Object> GetProjectByID(@PathVariable("project-id") final String projectId) throws IOException {
+    public ResponseEntity<Object> GetProjectByID(@PathVariable("project-id") final String projectId) throws Exception {
         logger.info("Request received to get project by id endpoint");
 
         ProjectDTO project;
         try {
             project =  projectService.getProjectByID(projectId);
-        } catch (IOException e){
+        } catch (Exception e){
             ErrorResponse error = new ErrorResponse();
             error.setDescription(e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
@@ -65,13 +69,13 @@ public class ProjectController {
 
     @Timed(value = "get.project.by.projectname.time", description = "time taken to get project by projectname")
     @GetMapping("/projectname/{projectname}")
-    public ResponseEntity<Object> GetProjectByProjectname(@PathVariable("projectname") final String projectname) throws IOException {
+    public ResponseEntity<Object> GetProjectByProjectname(@PathVariable("projectname") final String projectname) throws Exception {
         logger.info("Request received to get project by id endpoint");
 
         ProjectDTO project;
         try {
             project =  projectService.getProjectByProjectname(projectname);
-        } catch (IOException e){
+        } catch (Exception e){
             ErrorResponse error = new ErrorResponse();
             error.setDescription(e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
@@ -82,7 +86,7 @@ public class ProjectController {
 
     @Timed(value = "create.project.time", description = "time taken to create project")
     @PostMapping("")
-    public ResponseEntity<Object> CreateProject(@RequestBody ProjectDTO request, @RequestHeader("role") final String role) throws IOException {
+    public ResponseEntity<Object> CreateProject(@RequestBody ProjectDTO request, @RequestHeader("role") final String role) throws Exception {
         logger.info("Request received to create project by id endpoint");
 
         // Only PRODUCT_OWNER role can create a project
@@ -94,7 +98,7 @@ public class ProjectController {
         SuccessDTO successDTO;
         try {
             successDTO = projectService.createProject(request);
-        } catch (IOException e){
+        } catch (Exception e){
             ErrorResponse error = new ErrorResponse();
             error.setDescription(e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
@@ -105,13 +109,13 @@ public class ProjectController {
 
     @Timed(value = "update.project.by.id.time", description = "time taken to patch a project")
     @PutMapping("/{project-id}")
-    public ResponseEntity<Object> UpdateProjectByID(@PathVariable("project-id") final String projectId, @RequestBody ProjectDTO request) throws IOException {
+    public ResponseEntity<Object> UpdateProjectByID(@PathVariable("project-id") final String projectId, @RequestBody ProjectDTO request) throws Exception {
         logger.info("Request received to update project by id endpoint");
 
         SuccessDTO successDTO;
         try {
             successDTO = projectService.updateProject(projectId, request);
-        } catch (IOException e){
+        } catch (Exception e){
             ErrorResponse error = new ErrorResponse();
             error.setDescription(e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
@@ -122,13 +126,13 @@ public class ProjectController {
 
     @Timed(value = "patch.project.by.id.time", description = "time taken to patch a project")
     @PatchMapping("/{project-id}")
-    public ResponseEntity<Object> PatchProjectByID(@PathVariable("project-id") final String projectId, @RequestBody ProjectDTO request) throws IOException {
+    public ResponseEntity<Object> PatchProjectByID(@PathVariable("project-id") final String projectId, @RequestBody ProjectDTO request) throws Exception {
         logger.info("Request received to update project by id endpoint");
 
         SuccessDTO successDTO;
         try {
             successDTO = projectService.patchProject(projectId, request);
-        } catch (IOException e){
+        } catch (Exception e){
             ErrorResponse error = new ErrorResponse();
             error.setDescription(e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
@@ -139,12 +143,12 @@ public class ProjectController {
 
     @Timed(value = "delete.project.by.id.time", description = "time taken to delete a project")
     @DeleteMapping("/{project-id}")
-    public ResponseEntity<Object> DeleteProjectByID(@PathVariable("project-id") final String projectId) throws IOException {
+    public ResponseEntity<Object> DeleteProjectByID(@PathVariable("project-id") final String projectId) throws Exception {
         logger.info("Request received to delete project by id endpoint");
 
         try {
             projectService.deleteProject(projectId);
-        } catch (IOException e){
+        } catch (Exception e){
             ErrorResponse error = new ErrorResponse();
             error.setDescription(e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);

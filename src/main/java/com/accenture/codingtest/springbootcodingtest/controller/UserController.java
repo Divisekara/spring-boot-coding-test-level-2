@@ -18,8 +18,6 @@ import org.springframework.web.bind.annotation.*;
 // time series data output
 import io.micrometer.core.annotation.Timed;
 
-import java.io.IOException;
-import java.util.Locale;
 import java.util.Objects;
 
 @Slf4j
@@ -34,7 +32,7 @@ public class UserController {
 
     @Timed(value = "get.users.all.time", description = "time taken to get all users")
     @GetMapping("")
-    public ResponseEntity<Object> GetAllUsers(@RequestHeader("role") final String role) throws IOException {
+    public ResponseEntity<Object> GetAllUsers(@RequestHeader("role") final String role) throws Exception {
         logger.info("Request received to get all users endpoint");
 
         if(!Objects.equals(ROLES.ADMIN.toString(), role.toUpperCase())){
@@ -45,7 +43,7 @@ public class UserController {
         UserListDTO userList;
         try {
             userList = userService.getAllUsers();
-        } catch (IOException e){
+        } catch (Exception e){
             ErrorResponse error = new ErrorResponse();
             error.setDescription(e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
@@ -56,7 +54,7 @@ public class UserController {
 
     @Timed(value = "get.user.by.userid.time", description = "time taken to get user by user id")
     @GetMapping("/{user-id}")
-    public ResponseEntity<Object> GetUserByID(@PathVariable("user-id") final String userId, @RequestHeader("role") final String role) throws IOException {
+    public ResponseEntity<Object> GetUserByID(@PathVariable("user-id") final String userId, @RequestHeader("role") final String role) throws Exception {
         logger.info("Request received to get user by id endpoint");
 
         if(!Objects.equals(ROLES.ADMIN.toString(), role.toUpperCase())){
@@ -67,7 +65,7 @@ public class UserController {
         UserDTO user;
         try {
             user =  userService.getUserByID(userId);
-        } catch (IOException e){
+        } catch (Exception e){
             ErrorResponse error = new ErrorResponse();
             error.setDescription(e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
@@ -78,7 +76,7 @@ public class UserController {
 
     @Timed(value = "get.user.by.username.time", description = "time taken to get user by username")
     @GetMapping("/username/{username}")
-    public ResponseEntity<Object> GetUserByUsername(@PathVariable("username") final String username, @RequestHeader("role") final String role) throws IOException {
+    public ResponseEntity<Object> GetUserByUsername(@PathVariable("username") final String username, @RequestHeader("role") final String role) throws Exception {
         logger.info("Request received to get user by id endpoint");
 
         if(!Objects.equals(ROLES.ADMIN.toString(), role.toUpperCase())){
@@ -89,7 +87,7 @@ public class UserController {
         UserDTO user;
         try {
             user =  userService.getUserByUsername(username);
-        } catch (IOException e){
+        } catch (Exception e){
             ErrorResponse error = new ErrorResponse();
             error.setDescription(e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
@@ -100,7 +98,7 @@ public class UserController {
 
     @Timed(value = "create.user.time", description = "time taken to create user")
     @PostMapping("")
-    public ResponseEntity<Object> CreateUser(@RequestBody UserDTO request, @RequestHeader("role") final String role) throws IOException {
+    public ResponseEntity<Object> CreateUser(@RequestBody UserDTO request, @RequestHeader("role") final String role) throws Exception {
         logger.info("Request received to create user by id endpoint");
 
         if(!Objects.equals(ROLES.ADMIN.toString(), role.toUpperCase())){
@@ -122,7 +120,7 @@ public class UserController {
 
     @Timed(value = "update.user.by.id.time", description = "time taken to patch a user")
     @PutMapping("/{user-id}")
-    public ResponseEntity<Object> UpdateUserByID(@PathVariable("user-id") final String userId, @RequestBody UserDTO request, @RequestHeader("role") final String role) throws IOException {
+    public ResponseEntity<Object> UpdateUserByID(@PathVariable("user-id") final String userId, @RequestBody UserDTO request, @RequestHeader("role") final String role) throws Exception {
         logger.info("Request received to update user by id endpoint");
 
         if(!Objects.equals(ROLES.ADMIN.toString(), role.toUpperCase())){
@@ -133,7 +131,7 @@ public class UserController {
         SuccessDTO successDTO;
         try{
             successDTO = userService.updateUser(userId, request);
-        } catch (IOException e){
+        } catch (Exception e){
             ErrorResponse error = new ErrorResponse();
             error.setDescription(e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
@@ -144,7 +142,7 @@ public class UserController {
 
     @Timed(value = "patch.user.by.id.time", description = "time taken to patch a user")
     @PatchMapping("/{user-id}")
-    public ResponseEntity<Object> PatchUserByID(@PathVariable("user-id") final String userId, @RequestBody UserDTO request, @RequestHeader("role") final String role) throws IOException {
+    public ResponseEntity<Object> PatchUserByID(@PathVariable("user-id") final String userId, @RequestBody UserDTO request, @RequestHeader("role") final String role) throws Exception {
         logger.info("Request received to update user by id endpoint");
 
         if(!Objects.equals(ROLES.ADMIN.toString(), role.toUpperCase())){
@@ -166,7 +164,7 @@ public class UserController {
 
     @Timed(value = "delete.user.by.id.time", description = "time taken to delete a user")
     @DeleteMapping("/{user-id}")
-    public ResponseEntity<Object> DeleteUserByID(@PathVariable("user-id") final String userId, @RequestHeader("role") final String role) throws IOException {
+    public ResponseEntity<Object> DeleteUserByID(@PathVariable("user-id") final String userId, @RequestHeader("role") final String role) throws Exception {
         logger.info("Request received to delete user by id endpoint");
 
         if(!Objects.equals(ROLES.ADMIN.toString(), role.toUpperCase())){

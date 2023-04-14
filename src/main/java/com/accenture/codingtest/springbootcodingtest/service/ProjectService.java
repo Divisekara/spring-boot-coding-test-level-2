@@ -8,9 +8,12 @@ import com.accenture.codingtest.springbootcodingtest.repository.ProjectRepositor
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -24,13 +27,20 @@ public class ProjectService {
     @Autowired
     private ProjectRepository projectRepository;
 
-    public ProjectListDTO getAllProjects() throws IOException {
+    public ProjectListDTO getAllProjects(String q, int pageIndex, int pageSize, String sortBy, String sortDirection) throws Exception {
         ProjectListDTO projectList = new ProjectListDTO();
-        List<ProjectEntity> projectEntity = projectRepository.findAll();
+        List<ProjectEntity> projects;
 
-        // todo - return 400 error with response body if projectEntity is empty
+        if(q != null) {
+            Sort.Direction direction = Sort.Direction.valueOf(sortDirection.toUpperCase());
+            Pageable pageable = PageRequest.of(pageIndex, pageSize, direction, sortBy);
+            Page<ProjectEntity> projectsPage = projectRepository.findAllByNameContainingIgnoreCase(q, pageable);
+            projects = projectsPage.getContent();
+        } else {
+            projects = projectRepository.findAll();
+        }
 
-        for (ProjectEntity u: projectEntity ){
+        for (ProjectEntity u: projects ){
             ProjectDTO project = new ProjectDTO();
             project.setId(u.getId().toString());
             project.setName(u.getName());
@@ -41,13 +51,13 @@ public class ProjectService {
         return projectList;
     }
 
-    public ProjectDTO getProjectByID(String projectId) throws IOException {
+    public ProjectDTO getProjectByID(String projectId) throws Exception {
         ProjectDTO project = new ProjectDTO();
 
         Optional<ProjectEntity> projectEntity = projectRepository.findById(UUID.fromString(projectId));
         if(projectEntity.isEmpty()) {
             //todo- logging needs
-            throw new IOException("project doesn't exist");
+            throw new Exception("project doesn't exist");
         } else {
             project.setName(projectEntity.get().getName());
             project.setId(projectEntity.get().getId().toString());
@@ -55,14 +65,14 @@ public class ProjectService {
         return project;
     }
 
-    public ProjectDTO getProjectByProjectname(String projectname) throws IOException {
+    public ProjectDTO getProjectByProjectname(String projectname) throws Exception {
         ProjectDTO project = new ProjectDTO();
 
         // todo - need to implement a custom method
         Optional<ProjectEntity> projectEntity = projectRepository.findById(UUID.fromString(projectname));
         if(projectEntity.isEmpty()) {
             //todo- logging needs
-            throw new IOException("project doesn't exist");
+            throw new Exception("project doesn't exist");
         } else {
             project.setName(projectEntity.get().getName());
             project.setId(projectEntity.get().getId().toString());
@@ -70,7 +80,7 @@ public class ProjectService {
         return project;
     }
 
-    public SuccessDTO createProject(ProjectDTO project) throws IOException {
+    public SuccessDTO createProject(ProjectDTO project) throws Exception {
 
         // create projectEntity from request
         ProjectEntity projectEntity = new ProjectEntity();
@@ -89,13 +99,13 @@ public class ProjectService {
         return successDTO;
     }
 
-    public SuccessDTO updateProject(String projectId, ProjectDTO project) throws IOException {
+    public SuccessDTO updateProject(String projectId, ProjectDTO project) throws Exception {
         SuccessDTO successDTO = new SuccessDTO();
 
         Optional<ProjectEntity> projectEntity = projectRepository.findById(UUID.fromString(projectId));
         if(projectEntity.isEmpty()) {
             //todo- logging needs
-            throw new IOException("project doesn't exist");
+            throw new Exception("project doesn't exist");
         } else {
             // updating the project entity for the updated record
             projectEntity.get().setName(project.getName());
@@ -109,13 +119,13 @@ public class ProjectService {
         return successDTO;
     }
 
-    public SuccessDTO patchProject(String projectId, ProjectDTO project) throws IOException {
+    public SuccessDTO patchProject(String projectId, ProjectDTO project) throws Exception {
         SuccessDTO successDTO = new SuccessDTO();
 
         Optional<ProjectEntity> projectEntity = projectRepository.findById(UUID.fromString(projectId));
         if(projectEntity.isEmpty()) {
             //todo- logging needs
-            throw new IOException("project doesn't exist");
+            throw new Exception("project doesn't exist");
         } else {
             // updating the project entity for the updated record
             if(project.getName() != null){projectEntity.get().setName(project.getName());}
@@ -129,9 +139,9 @@ public class ProjectService {
         return successDTO;
     }
 
-    public void deleteProject(String projectId) throws IOException {
+    public void deleteProject(String projectId) throws Exception {
         if(!projectRepository.existsById(UUID.fromString(projectId))){
-            throw new IOException("project does not exist");
+            throw new Exception("project does not exist");
         }
         projectRepository.deleteById(UUID.fromString(projectId));
         //todo- logging needs

@@ -12,7 +12,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -27,7 +26,7 @@ public class TaskService {
     @Autowired
     private TaskRepository taskRepository;
 
-    public TaskListDTO getAllTasks() throws IOException {
+    public TaskListDTO getAllTasks() throws Exception {
         TaskListDTO taskList = new TaskListDTO();
         List<TaskEntity> taskEntity = taskRepository.findAll();
 
@@ -48,13 +47,13 @@ public class TaskService {
         return taskList;
     }
 
-    public TaskDTO getTaskByID(String taskId) throws IOException {
+    public TaskDTO getTaskByID(String taskId) throws Exception {
         TaskDTO task = new TaskDTO();
 
         Optional<TaskEntity> taskEntity = taskRepository.findById(UUID.fromString(taskId));
         if(taskEntity.isEmpty()) {
             logger.info("task doesn't exist for [{}]", taskId);
-            throw new IOException("task doesn't exist");
+            throw new Exception("task doesn't exist");
         } else {
             task.setTitle(taskEntity.get().getTitle());
             task.setDescription(taskEntity.get().getDescription());
@@ -66,14 +65,14 @@ public class TaskService {
         return task;
     }
 
-    public TaskDTO getTaskByTaskname(String taskname) throws IOException {
+    public TaskDTO getTaskByTaskname(String taskname) throws Exception {
         TaskDTO task = new TaskDTO();
 
         // todo - need to implement a custom method
         Optional<TaskEntity> taskEntity = taskRepository.findById(UUID.fromString(taskname));
         if(taskEntity.isEmpty()) {
             logger.info("task doesn't exist for [{}]", taskname);
-            throw new IOException("task doesn't exist");
+            throw new Exception("task doesn't exist");
         } else {
             task.setTitle(taskEntity.get().getTitle());
             task.setDescription(taskEntity.get().getDescription());
@@ -85,7 +84,7 @@ public class TaskService {
         return task;
     }
 
-    public SuccessDTO createTask(TaskDTO task) throws IOException {
+    public SuccessDTO createTask(TaskDTO task) throws Exception {
 
         // create taskEntity from request
         TaskEntity taskEntity = new TaskEntity();
@@ -106,31 +105,31 @@ public class TaskService {
         return successDTO;
     }
 
-    public SuccessDTO updateTask(String taskId, TaskDTO task, String role) throws IOException {
+    public SuccessDTO updateTask(String taskId, TaskDTO task, String role) throws Exception {
         SuccessDTO successDTO = new SuccessDTO();
 
         Optional<TaskEntity> taskEntity = taskRepository.findById(UUID.fromString(taskId));
         if(taskEntity.isEmpty()) {
             logger.info("task doesn't exist");
-            throw new IOException("task doesn't exist");
+            throw new Exception("task doesn't exist");
         } else {
             // validating status updating process
             if (!validateStatus(task.getStatus(), taskEntity.get().getStatus(), role)){
                 logger.info("status update error");
-                throw new IOException("status update error");
+                throw new Exception("status update error");
             }
 
             // validating user assigning process
             if(!validateUserAssign(task.getUser_id(), taskEntity.get().getUser_id().toString(), role)){
                 logger.info("cannot assign user [{}] to the task", task.getUser_id());
-                throw new IOException("cannot assign user to the task");
+                throw new Exception("cannot assign user to the task");
             }
 
             // validate team member activity
             // Team member can only change the status of the task assigned to them, they can edit any other attribute in a task.
             if(!validateTeamMemberActivitiesInUpdate(task, taskEntity.get())){
                 logger.info("cannot modify [{}] by default user role", taskEntity);
-                throw new IOException("cannot modify the task by default user role");
+                throw new Exception("cannot modify the task by default user role");
             }
 
             // assign new values to task entity for update
@@ -149,25 +148,25 @@ public class TaskService {
         return successDTO;
     }
 
-    public SuccessDTO patchTask(String taskId, TaskDTO task, String role) throws IOException {
+    public SuccessDTO patchTask(String taskId, TaskDTO task, String role) throws Exception {
         SuccessDTO successDTO = new SuccessDTO();
 
         Optional<TaskEntity> taskEntity = taskRepository.findById(UUID.fromString(taskId));
         if(taskEntity.isEmpty()) {
             logger.info("task doesn't exist for [{}]", taskId);
-            throw new IOException("task doesn't exist");
+            throw new Exception("task doesn't exist");
         } else {
             // Team member can only change the status of the task assigned to them, they can edit any other attribute in a task.
             if(role.toUpperCase().equals(ROLES.DEFAULT_USER.toString()) && !validateTeamMemberActivitiesInPatch(task)){
                 logger.info("cannot modify [{}] by default user role", taskEntity);
-                throw new IOException("cannot modify the task by default user role");
+                throw new Exception("cannot modify the task by default user role");
             }
 
             if(task.getStatus() != null){
                 // validating status updating process
                 if (!validateStatus(task.getStatus(), taskEntity.get().getStatus(), role)){
                     logger.info("status update error");
-                    throw new IOException("status update error");
+                    throw new Exception("status update error");
                 }
                 taskEntity.get().setStatus(task.getStatus());
             }
@@ -176,7 +175,7 @@ public class TaskService {
                 // validating user assigning process
                 if(!validateUserAssign(task.getUser_id(), taskEntity.get().getUser_id().toString(), role)){
                     logger.info("cannot assign user [{}] to the task", task.getUser_id());
-                    throw new IOException("cannot assign user to the task");
+                    throw new Exception("cannot assign user to the task");
                 }
                 taskEntity.get().setUser_id(UUID.fromString(task.getUser_id()));
             }
@@ -195,9 +194,9 @@ public class TaskService {
         return successDTO;
     }
 
-    public void deleteTask(String taskId) throws IOException {
+    public void deleteTask(String taskId) throws Exception {
         if(!taskRepository.existsById(UUID.fromString(taskId))){
-            throw new IOException("task does not exist");
+            throw new Exception("task does not exist");
         }
         taskRepository.deleteById(UUID.fromString(taskId));
         logger.info("task [{}] deleted successful", taskId);
@@ -205,7 +204,7 @@ public class TaskService {
 
 
     // validateStatus validate status updating process
-    private boolean validateStatus(String newStatus, String prevStatus, String role) throws IOException{
+    private boolean validateStatus(String newStatus, String prevStatus, String role) throws Exception{
         // check whether the status is updated
         if(Objects.equals(newStatus, prevStatus)) {
             // if status is not updated there's no point validating further
@@ -215,7 +214,7 @@ public class TaskService {
         // if status is updated then role need to be PRODUCT_OWNER else it's an error
         if(!Objects.equals(ROLES.PRODUCT_OWNER.toString(), role.toUpperCase())){
             return false;
-            // throw new IOException("status cannot be updated");
+            // throw new Exception("status cannot be updated");
         }
 
         // if the role is product_owner then need to validate whether the status is valid
@@ -229,7 +228,7 @@ public class TaskService {
     }
 
     // validateUserAssign validate user assigning process
-    private boolean validateUserAssign(String newUser, String oldUser, String role) throws IOException{
+    private boolean validateUserAssign(String newUser, String oldUser, String role) throws Exception{
         // user is not updated
         if(Objects.equals(newUser, oldUser)){
             return true;
@@ -240,7 +239,7 @@ public class TaskService {
     }
 
     // validateTeamMemberActivitiesInUpdate team member cannot modify any attribute other than status
-    private boolean validateTeamMemberActivitiesInUpdate(TaskDTO newTask, TaskEntity oldTask)throws IOException{
+    private boolean validateTeamMemberActivitiesInUpdate(TaskDTO newTask, TaskEntity oldTask)throws Exception{
         return Objects.equals(newTask.getTitle(), oldTask.getTitle()) &&
                 Objects.equals(newTask.getDescription(), oldTask.getDescription()) &&
                 Objects.equals(newTask.getProject_id(), oldTask.getProject_id().toString()) &&
@@ -248,7 +247,7 @@ public class TaskService {
     }
 
     // validateTeamMemberActivitiesInPatch team member cannot modify any attribute other than status
-    private boolean validateTeamMemberActivitiesInPatch(TaskDTO newTask)throws IOException{
+    private boolean validateTeamMemberActivitiesInPatch(TaskDTO newTask)throws Exception{
         return newTask.getTitle() == null &&
                 newTask.getDescription() == null &&
                 newTask.getProject_id() == null &&

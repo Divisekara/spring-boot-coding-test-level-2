@@ -15,7 +15,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.io.IOException;
 import java.util.Objects;
 
 @Slf4j
@@ -30,7 +29,7 @@ public class TaskController {
 
     @Timed(value = "get.tasks.all.time", description = "time taken to get all tasks")
     @GetMapping("")
-    public ResponseEntity<Object> GetAllTasks() throws IOException {
+    public ResponseEntity<Object> GetAllTasks() throws Exception {
         logger.info("Request received to get all tasks endpoint");
 
         TaskListDTO taskList;
@@ -47,7 +46,7 @@ public class TaskController {
 
     @Timed(value = "get.task.by.taskid.time", description = "time taken to get task by task id")
     @GetMapping("/{task-id}")
-    public ResponseEntity<Object> GetTaskByID(@PathVariable("task-id") final String taskId) throws IOException {
+    public ResponseEntity<Object> GetTaskByID(@PathVariable("task-id") final String taskId) throws Exception {
         logger.info("Request received to get task by id endpoint");
         TaskDTO task;
         try {
@@ -64,12 +63,12 @@ public class TaskController {
 
     @Timed(value = "get.task.by.taskname.time", description = "time taken to get task by taskname")
     @GetMapping("/taskname/{taskname}")
-    public ResponseEntity<Object> GetTaskByTaskname(@PathVariable("taskname") final String taskname) throws IOException {
+    public ResponseEntity<Object> GetTaskByTaskname(@PathVariable("taskname") final String taskname) throws Exception {
         logger.info("Request received to get task by id endpoint");
         TaskDTO task;
         try {
             task = taskService.getTaskByTaskname(taskname);
-        } catch (IOException e){
+        } catch (Exception e){
             ErrorResponse error = new ErrorResponse();
             error.setDescription(e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
@@ -79,7 +78,7 @@ public class TaskController {
 
     @Timed(value = "create.task.time", description = "time taken to create task")
     @PostMapping("")
-    public ResponseEntity<Object> CreateTask(@RequestBody TaskDTO request, @RequestHeader("role") final String role) throws IOException {
+    public ResponseEntity<Object> CreateTask(@RequestBody TaskDTO request, @RequestHeader("role") final String role) throws Exception {
         // Only PRODUCT_OWNER role can create a tasks
         if(!Objects.equals(ROLES.PRODUCT_OWNER.toString(), role.toUpperCase())){
             logger.info("User unauthorized");
@@ -90,7 +89,7 @@ public class TaskController {
         SuccessDTO successDTO;
         try{
             successDTO = taskService.createTask(request);
-        } catch(IOException e){
+        } catch(Exception e){
             ErrorResponse error = new ErrorResponse();
             error.setDescription(e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
@@ -101,7 +100,7 @@ public class TaskController {
 
     @Timed(value = "update.task.by.id.time", description = "time taken to patch a task")
     @PutMapping("/{task-id}")
-    public ResponseEntity<Object> UpdateTaskByID(@PathVariable("task-id") final String taskId, @RequestBody TaskDTO request, @RequestHeader("role") final String role) throws IOException {
+    public ResponseEntity<Object> UpdateTaskByID(@PathVariable("task-id") final String taskId, @RequestBody TaskDTO request, @RequestHeader("role") final String role) throws Exception {
         logger.info("Request received to update task by id endpoint");
         SuccessDTO successDTO = new SuccessDTO();
         try {
@@ -117,12 +116,12 @@ public class TaskController {
 
     @Timed(value = "patch.task.by.id.time", description = "time taken to patch a task")
     @PatchMapping("/{task-id}")
-    public ResponseEntity<Object> PatchTaskByID(@PathVariable("task-id") final String taskId, @RequestBody TaskDTO request, @RequestHeader("role") final String role) throws IOException {
+    public ResponseEntity<Object> PatchTaskByID(@PathVariable("task-id") final String taskId, @RequestBody TaskDTO request, @RequestHeader("role") final String role) throws Exception {
         logger.info("Request received to update task by id endpoint");
         SuccessDTO successDTO;
         try {
             successDTO = taskService.patchTask(taskId, request, role);
-        } catch (IOException e){
+        } catch (Exception e){
             ErrorResponse error = new ErrorResponse();
             error.setDescription(e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
@@ -133,11 +132,11 @@ public class TaskController {
 
     @Timed(value = "delete.task.by.id.time", description = "time taken to delete a task")
     @DeleteMapping("/{task-id}")
-    public ResponseEntity<Object> DeleteTaskByID(@PathVariable("task-id") final String taskId) throws IOException {
+    public ResponseEntity<Object> DeleteTaskByID(@PathVariable("task-id") final String taskId) throws Exception {
         logger.info("Request received to delete task by id endpoint");
         try {
             taskService.deleteTask(taskId);
-        } catch (IOException e){
+        } catch (Exception e){
             ErrorResponse error = new ErrorResponse();
             error.setDescription(e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
