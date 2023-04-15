@@ -126,8 +126,8 @@ public class TaskService {
             }
 
             // validate team member activity
-            // Team member can only change the status of the task assigned to them, they can edit any other attribute in a task.
-            if(!validateTeamMemberActivitiesInUpdate(task, taskEntity.get())){
+            // Team member can only change the status of the task assigned to them, they cannot edit any other attribute in a task.
+            if(role.toUpperCase().equals(ROLES.DEFAULT_USER.toString()) && !validateTeamMemberActivitiesInUpdate(task, taskEntity.get())){
                 logger.info("cannot modify [{}] by default user role", taskEntity);
                 throw new Exception("cannot modify the task by default user role");
             }
