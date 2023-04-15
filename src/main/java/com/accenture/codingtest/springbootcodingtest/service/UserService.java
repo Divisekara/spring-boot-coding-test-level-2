@@ -10,7 +10,6 @@ import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -24,7 +23,7 @@ public class UserService {
     @Autowired
     private UserRepository userRepository;
 
-    public UserListDTO getAllUsers() throws IOException {
+    public UserListDTO getAllUsers() throws Exception {
         UserListDTO userList = new UserListDTO();
         List<UserEntity> userEntity = userRepository.findAll();
 
@@ -42,13 +41,13 @@ public class UserService {
         return userList;
     }
 
-    public UserDTO getUserByID(String userId) throws IOException {
+    public UserDTO getUserByID(String userId) throws Exception {
         UserDTO user = new UserDTO();
 
         Optional<UserEntity> userEntity = userRepository.findById(UUID.fromString(userId));
         if(userEntity.isEmpty()) {
             //todo- logging needs
-            throw new IOException("user doesn't exist");
+            throw new Exception("user doesn't exist");
         } else {
             user.setUsername(userEntity.get().getUsername());
             user.setPassword(userEntity.get().getPassword());
@@ -57,14 +56,14 @@ public class UserService {
         return user;
     }
 
-    public UserDTO getUserByUsername(String username) throws IOException {
+    public UserDTO getUserByUsername(String username) throws Exception {
         UserDTO user = new UserDTO();
 
         // todo - need to implement a custom method
         Optional<UserEntity> userEntity = userRepository.findById(UUID.fromString(username));
         if(userEntity.isEmpty()) {
             //todo- logging needs
-            throw new IOException("user doesn't exist");
+            throw new Exception("user doesn't exist");
         } else {
             user.setUsername(userEntity.get().getUsername());
             user.setPassword(userEntity.get().getPassword());
@@ -73,7 +72,7 @@ public class UserService {
         return user;
     }
 
-    public SuccessDTO createUser(UserDTO user) throws IOException {
+    public SuccessDTO createUser(UserDTO user) throws Exception {
 
         // create userEntity from request
         UserEntity userEntity = new UserEntity();
@@ -93,13 +92,13 @@ public class UserService {
         return successDTO;
     }
 
-    public SuccessDTO updateUser(String userId, UserDTO user) throws IOException {
+    public SuccessDTO updateUser(String userId, UserDTO user) throws Exception {
         SuccessDTO successDTO = new SuccessDTO();
 
         Optional<UserEntity> userEntity = userRepository.findById(UUID.fromString(userId));
         if(userEntity.isEmpty()) {
             //todo- logging needs
-            throw new IOException("user doesn't exist");
+            throw new Exception("user doesn't exist");
         } else {
             // updating the user entity for the updated record
             userEntity.get().setUsername(user.getUsername());
@@ -114,13 +113,13 @@ public class UserService {
         return successDTO;
     }
 
-    public SuccessDTO patchUser(String userId, UserDTO user) throws IOException {
+    public SuccessDTO patchUser(String userId, UserDTO user) throws Exception {
         SuccessDTO successDTO = new SuccessDTO();
 
         Optional<UserEntity> userEntity = userRepository.findById(UUID.fromString(userId));
         if(userEntity.isEmpty()) {
             //todo- logging needs
-            throw new IOException("user doesn't exist");
+            throw new Exception("user doesn't exist");
         } else {
             // updating the user entity for the updated record
             if(user.getUsername() != null){userEntity.get().setUsername(user.getUsername());}
@@ -135,9 +134,9 @@ public class UserService {
         return successDTO;
     }
 
-    public void deleteUser(String userId) throws IOException {
+    public void deleteUser(String userId) throws Exception {
         if(!userRepository.existsById(UUID.fromString(userId))){
-            throw new IOException("user does not exist");
+            throw new Exception("user does not exist");
         }
         userRepository.deleteById(UUID.fromString(userId));
         //todo- logging needs
